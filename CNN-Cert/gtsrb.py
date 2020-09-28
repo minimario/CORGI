@@ -50,11 +50,9 @@ def calculate_cam_bounds(model, cnn_model, image, eps):
     print("Pred: {}, Correct: {}".format(pred_class, correct_class))
 
     # get the LB's and UB's for the CAM
-    # LBs, UBs = run_gtsrb(cnn_model, image, correct_class, eps, 105)
-    last_conv_lb = np.random.normal(0, 1, (24, 24, 128))
-    last_conv_ub = np.random.normal(0, 1, (24, 24, 128))
-    # last_conv_lb = LBs[-3]  # (24, 24, 128)
-    # last_conv_ub = UBs[-3]
+    LBs, UBs = run_gtsrb(cnn_model, image, correct_class, eps, 105)
+    last_conv_lb = LBs[-3]  # (24, 24, 128)
+    last_conv_ub = UBs[-3]
     fc_weights = model.weights[-2].numpy()  # 128 x 43
 
     cam_LB = np.zeros((24, 24))
@@ -89,7 +87,7 @@ def get_interpretability_bound(model, image, num_indices):
     cnn_model = Model(model, inp_shape=(48, 48, 3))
 
     eps_min = 0
-    eps_max = 1
+    eps_max = 0.05
     num_iterations = 15
     for it in range(num_iterations):
         print("Iteration {}, LB: {}, UB: {}".format(it, eps_min, eps_max))
