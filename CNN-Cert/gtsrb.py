@@ -33,8 +33,8 @@ def get_cam_map(model, image, target_class):
 # 2) calculate the top k indices of the CAM
 def get_maximum_indices(array, num_indices):
     sorted_r, sorted_c = np.unravel_index(np.argsort(-array, axis=None), array.shape)
-    topk_r, topk_c = sorted_i[:num_indices], sorted_j[:num_indices]
-    not_topk_r, not_topk_c = sorted_i[num_indices:], sorted_j[num_indices:]
+    topk_r, topk_c = sorted_r[:num_indices], sorted_c[:num_indices]
+    not_topk_r, not_topk_c = sorted_r[num_indices:], sorted_c[num_indices:]
     return ((topk_r, topk_c), (not_topk_r, not_topk_c))
 
 
@@ -50,16 +50,18 @@ def calculate_cam_bounds(model, cnn_model, image, eps):
     print("Pred: {}, Correct: {}".format(pred_class, correct_class))
 
     # get the LB's and UB's for the CAM
-    LBs, UBs = run_gtsrb(cnn_model, image, correct_class, eps, 105)
-    last_conv_lb = LBs[-3]  # (24, 24, 128)
-    last_conv_ub = UBs[-3]
+    # LBs, UBs = run_gtsrb(cnn_model, image, correct_class, eps, 105)
+    last_conv_lb = np.random.normal(0, 1, (24, 24, 128))
+    last_conv_ub = np.random.normal(0, 1, (24, 24, 128))
+    # last_conv_lb = LBs[-3]  # (24, 24, 128)
+    # last_conv_ub = UBs[-3]
     fc_weights = model.weights[-2].numpy()  # 128 x 43
 
     cam_LB = np.zeros((24, 24))
     cam_UB = np.zeros((24, 24))
 
     for channel in range(128):
-        channel_weight = fc_weights[channel, label]
+        channel_weight = fc_weights[channel, pred_class]
         if channel_weight < 0:
             cam_LB += last_conv_ub[:, :, channel] * channel_weight
             cam_UB += last_conv_lb[:, :, channel] * channel_weight

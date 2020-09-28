@@ -1487,11 +1487,8 @@ def run_gtsrb(model, input, label, eps, p_n, activation="relu"):
     global linear_bounds
     linear_bounds = ada_linear_bounds
 
-    eps = 0.005
-
     # warmup(model, inputs[0].astype(np.float32), eps_0, p_n, find_output_bounds)
 
-    
     weights, biases, shapes = model.weights[:-1], model.biases[:-1], model.shapes[:-1]
     W, b, s = model.weights[-1], model.biases[-1], model.shapes[-1]
     last_weight = W[label, :, :, :].reshape([1] + list(W.shape[1:]))
