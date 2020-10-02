@@ -1,7 +1,7 @@
 import numpy as np
 import keras
 from keras.models import load_model
-from model import X, Y
+from load_images import X, Y
 from cnn_bounds_full import Model, run_gtsrb
 
 # model = load_model("../model_clast.h5")
@@ -104,4 +104,16 @@ def get_interpretability_bound(model, image, num_indices):
     return eps_min
 
 
-print(get_interpretability_bound(model, image, 10))
+import pickle
+data = {}
+with open('data.pkl', 'wb') as f:
+    pickle.dump(data, f)
+
+for top_k in range(1, 11):
+    with open('data.pkl', 'rb') as f:
+        data = pickle.load(f)
+    if top_k not in data:
+        bound = get_interpretability_bound(model, image, top_k)
+        data[top_k] = bound
+    with open('data.pkl', 'wb') as f:
+        pickle.dump(data, f)
