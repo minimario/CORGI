@@ -10,19 +10,22 @@ from cnn_bounds_full import Model, run_gtsrb
 # load the model
 model = load_model("../model_small.h5")
 
+channels = 32
+cam_dim = 24
+
 # load an image
 image = X[0]
 # 1) calculate the CAM
 def get_cam_map(model, image, target_class):
-    fc_weights = model.weights[-2].numpy()  # 128 x 43
+    fc_weights = model.weights[-2].numpy()  # channels x 43
     last_conv_layer_output_model = keras.Model(  # model to get the last conv layer outputs
         model.input, model.get_layer(index=-3).output
     )
     last_conv_layer_output = last_conv_layer_output_model(
         np.expand_dims(image, 0)
     )  # last conv layer output
-    cam_map = np.zeros((24, 24))
-    for channel in range(128):
+    cam_map = np.zeros((cam_dim, cam_dim))
+    for channel in range(channels):
         cam_map += (
             last_conv_layer_output[0, :, :, channel].numpy()
             * fc_weights[channel, target_class]
@@ -51,14 +54,14 @@ def calculate_cam_bounds(model, cnn_model, image, eps):
 
     # get the LB's and UB's for the CAM
     LBs, UBs = run_gtsrb(cnn_model, image, correct_class, eps, 105)
-    last_conv_lb = LBs[-3]  # (24, 24, 128)
+    last_conv_lb = LBs[-3]  # (cam_dim, cam_dim, channels)
     last_conv_ub = UBs[-3]
-    fc_weights = model.weights[-2].numpy()  # 128 x 43
+    fc_weights = model.weights[-2].numpy()  # channels x 43
 
-    cam_LB = np.zeros((24, 24))
-    cam_UB = np.zeros((24, 24))
+    cam_LB = np.zeros((cam_dim, cam_dim))
+    cam_UB = np.zeros((cam_dim, cam_dim))
 
-    for channel in range(128):
+    for channel in range(channels):
         channel_weight = fc_weights[channel, pred_class]
         if channel_weight < 0:
             cam_LB += last_conv_ub[:, :, channel] * channel_weight
