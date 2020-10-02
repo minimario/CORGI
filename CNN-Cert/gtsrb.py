@@ -8,9 +8,9 @@ from cnn_bounds_full import Model, run_gtsrb
 # cnn_model = Model(model, inp_shape=(48, 48, 3))
 
 # load the model
-model = load_model("../model_small.h5")
+model = load_model("../model_small_92.h5")
 
-channels = 32
+channels = 16
 cam_dim = 24
 
 # load an image
