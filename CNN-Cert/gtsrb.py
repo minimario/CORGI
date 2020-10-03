@@ -80,8 +80,19 @@ def check_top_k(cam_map, cam_LB, cam_UB, num_indices):
     )  # minimum lower bound of top k indices
     max_UB_not_top_k = np.max(
         cam_UB[not_topk_r, not_topk_c]
-    )  # maximum upper bound of indices not in tosp k
+    )  # maximum upper bound of indices not in top k
     return min_LB_top_k > max_UB_not_top_k
+
+def check_top_k_close(cam_map, cam_LB, cam_UB, k1, k2):
+    (topk_r, topk_c), (not_topk_r, not_topk_c) = get_cam_top_k(cam_map, k1)
+    not_top_k_values = cam_UB[not_topk_r, not_topk_c]
+    top_k_necessary = np.partition(-not_top_k_values, k1-k2)[k1-k2]
+
+    not_top_k_values.sort()
+    not_top_k_values = np.flip(not_top_k_values)
+    assert(-top_k_necessary == not_top_k_values[k1-k2])
+    min_LB_top_k = np.min(cam_LB[topk_r, topk_c])
+    return min_LB_top_k > -top_k_necessary
 
 
 def get_interpretability_bound(model, image, num_indices):
@@ -103,17 +114,39 @@ def get_interpretability_bound(model, image, num_indices):
 
     return eps_min
 
+def get_interpretability_bound_rank(model, image, k1, k2):
+    correct_class = np.argmax(model.predict(image[np.newaxis, :]))
+    cam_map = get_cam_map(model, image, correct_class)
+    cnn_model = Model(model, inp_shape=(48, 48, 3))
 
-import pickle
-data = {}
-with open('data.pkl', 'wb') as f:
-    pickle.dump(data, f)
+    eps_min = 0
+    eps_max = 0.05
+    num_iterations = 15
+    for it in range(num_iterations):
+        print("Iteration {}, LB: {}, UB: {}".format(it, eps_min, eps_max))
+        eps_mid = (eps_min + eps_max) / 2
+        cam_LB, cam_UB = calculate_cam_bounds(model, cnn_model, image, eps_mid)
+        if check_top_k_close(cam_map, cam_LB, cam_UB, k1, k2):
+            eps_min = eps_mid
+        else:
+            eps_max = eps_mid
 
-for top_k in range(1, 11):
-    with open('data.pkl', 'rb') as f:
-        data = pickle.load(f)
-    if top_k not in data:
-        bound = get_interpretability_bound(model, image, top_k)
-        data[top_k] = bound
-    with open('data.pkl', 'wb') as f:
-        pickle.dump(data, f)
+    return eps_min
+
+# bound = get_interpretability_bound(model, image, 15)
+bound2 = get_interpretability_bound_rank(model, image, 15, 15)
+print(bound2)
+
+# import pickle
+# data = {}
+# with open('data.pkl', 'wb') as f:
+#     pickle.dump(data, f)
+
+# for top_k in range(1, 11):
+#     with open('data.pkl', 'rb') as f:
+#         data = pickle.load(f)
+#     if top_k not in data:
+#         bound = get_interpretability_bound(model, image, top_k)
+#         data[top_k] = bound
+#     with open('data.pkl', 'wb') as f:
+#         pickle.dump(data, f)

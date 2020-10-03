@@ -38,8 +38,9 @@ imgs = []
 labels = []
 
 all_img_paths = glob.glob(os.path.join(root_dir, '*/*.ppm'))
+np.random.seed(1234)
 np.random.shuffle(all_img_paths)
-for img_path in all_img_paths[0:10]:
+for img_path in all_img_paths[0:500]:
     img = preprocess_img(io.imread(img_path))
     label = get_class(img_path)
     imgs.append(img)
