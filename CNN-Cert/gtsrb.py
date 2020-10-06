@@ -44,7 +44,6 @@ def get_maximum_indices(array, num_indices):
 def get_cam_top_k(cam_map, k):
     return get_maximum_indices(cam_map, k)
 
-
 # 3) calculate the bounds for the CAM and some given epsilon
 def calculate_cam_bounds(model, cnn_model, image, eps):
     # make sure predicted class is correct
@@ -72,7 +71,6 @@ def calculate_cam_bounds(model, cnn_model, image, eps):
 
     return cam_LB, cam_UB
 
-
 def check_top_k(cam_map, cam_LB, cam_UB, num_indices):
     (topk_r, topk_c), (not_topk_r, not_topk_c) = get_cam_top_k(cam_map, num_indices)
     min_LB_top_k = np.min(
@@ -86,14 +84,13 @@ def check_top_k(cam_map, cam_LB, cam_UB, num_indices):
 def check_top_k_close(cam_map, cam_LB, cam_UB, k1, k2):
     (topk_r, topk_c), (not_topk_r, not_topk_c) = get_cam_top_k(cam_map, k1)
     not_top_k_values = cam_UB[not_topk_r, not_topk_c]
-    top_k_necessary = np.partition(-not_top_k_values, k1-k2)[k1-k2]
+    top_k_necessary = np.partition(-not_top_k_values, k2-k1)[k2-k1]
 
     not_top_k_values.sort()
     not_top_k_values = np.flip(not_top_k_values)
-    assert(-top_k_necessary == not_top_k_values[k1-k2])
+    assert(-top_k_necessary == not_top_k_values[k2-k1])
     min_LB_top_k = np.min(cam_LB[topk_r, topk_c])
     return min_LB_top_k > -top_k_necessary
-
 
 def get_interpretability_bound(model, image, num_indices):
     correct_class = np.argmax(model.predict(image[np.newaxis, :]))
@@ -134,8 +131,7 @@ def get_interpretability_bound_rank(model, image, k1, k2):
     return eps_min
 
 # bound = get_interpretability_bound(model, image, 15)
-bound2 = get_interpretability_bound_rank(model, image, 15, 15)
-print(bound2)
+# bound2 = get_interpretability_bound_rank(model, image, 15, 15)
 
 # import pickle
 # data = {}

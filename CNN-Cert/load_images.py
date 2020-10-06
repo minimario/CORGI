@@ -33,7 +33,7 @@ def preprocess_img(img):
 def get_class(img_path):
     return int(img_path.split('/')[-2])
 
-root_dir = '/home/minimario/Research/gtsrb/GTSRB/Final_Training/Images'
+root_dir = '/content/gtsrb/GTSRB/Final_Training/Images'
 imgs = []
 labels = []
 
