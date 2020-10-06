@@ -38,6 +38,8 @@ imgs = []
 labels = []
 
 all_img_paths = glob.glob(os.path.join(root_dir, '*/*.ppm'))
+all_img_paths.sort()
+
 # np.random.seed(1234)
 # np.random.shuffle(all_img_paths)
 # for img_path in all_img_paths[0:500]:
@@ -45,13 +47,13 @@ all_img_paths = glob.glob(os.path.join(root_dir, '*/*.ppm'))
 #     label = get_class(img_path)
 #     imgs.append(img)
 #     labels.append(label)
+
 for i in range(0, len(all_img_paths), 50): # len(all_img_paths)
   img_path = all_img_paths[i]
   img = preprocess_img(io.imread(img_path))
   label = get_class(img_path)
   imgs.append(img)
   labels.append(label)
-
 
 X = np.array(imgs, dtype='float32').transpose(0, 2, 3, 1) # n 48 48 3
 Y = np.eye(NUM_CLASSES, dtype='uint8')[labels]
