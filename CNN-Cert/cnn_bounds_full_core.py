@@ -70,10 +70,10 @@ class CNNModel:
         cur_shape = inp_shape
         self.shapes.append(cur_shape)
         for layer in model.layers:
-            print(cur_shape)
+            # print(cur_shape)
             weights = layer.get_weights()
             if type(layer) == Conv2D:
-                print("conv")
+                # print("conv")
                 if len(weights) == 1:
                     W = weights[0].astype(np.float32)
                     b = np.zeros(W.shape[-1], dtype=np.float32)
@@ -110,7 +110,7 @@ class CNNModel:
                 self.weights.append(W)
                 self.biases.append(b)
             elif type(layer) == GlobalAveragePooling2D:
-                print("global avg pool")
+                # print("global avg pool")
                 b = np.zeros(cur_shape[-1], dtype=np.float32)
                 W = np.zeros(
                     (cur_shape[0], cur_shape[1], cur_shape[2], cur_shape[2]),
@@ -127,7 +127,7 @@ class CNNModel:
                 self.weights.append(W)
                 self.biases.append(b)
             elif type(layer) == AveragePooling2D:
-                print("avg pool")
+                # print("avg pool")
                 b = np.zeros(cur_shape[-1], dtype=np.float32)
                 pool_size = layer.get_config()["pool_size"]
                 stride = layer.get_config()["strides"]
@@ -166,13 +166,13 @@ class CNNModel:
                 self.weights.append(W)
                 self.biases.append(b)
             elif type(layer) == Activation:
-                print("activation")
+                # print("activation")
             elif type(layer) == Lambda:
-                print("lambda")
+                # print("lambda")
             elif type(layer) == InputLayer:
-                print("input")
+                # print("input")
             elif type(layer) == BatchNormalization:
-                print("batch normalization")
+                # print("batch normalization")
                 gamma, beta, mean, std = weights
                 std = np.sqrt(std + 0.001)  # Avoids zero division
                 a = gamma / std
@@ -180,7 +180,7 @@ class CNNModel:
                 self.weights[-1] = a * self.weights[-1]
                 self.biases[-1] = a * self.biases[-1] + b
             elif type(layer) == Dense:
-                print("FC")
+                # print("FC")
                 W, b = weights
                 b = b.astype(np.float32)
                 W = W.reshape(list(cur_shape) + [W.shape[-1]]).astype(np.float32)
@@ -191,9 +191,9 @@ class CNNModel:
                 self.weights.append(W)
                 self.biases.append(b)
             elif type(layer) == Dropout:
-                print("dropout")
+                # print("dropout")
             elif type(layer) == MaxPooling2D:
-                print("pool")
+                # print("pool")
                 pool_size = layer.get_config()["pool_size"]
                 stride = layer.get_config()["strides"]
                 pad = (0, 0, 0, 0)  # p_hl, p_hr, p_wl, p_wr
@@ -227,13 +227,13 @@ class CNNModel:
                 )
                 self.biases.append(np.full(1, np.nan, dtype=np.float32))
             elif type(layer) == Flatten:
-                print("flatten")
+                # print("flatten")
             elif type(layer) == Reshape:
-                print("reshape")
+                # print("reshape")
             else:
-                print(str(type(layer)))
+                # print(str(type(layer)))
                 raise ValueError("Invalid Layer Type")
-        print(cur_shape)
+        # print(cur_shape)
 
         for i in range(len(self.weights)):
             self.weights[i] = np.ascontiguousarray(
