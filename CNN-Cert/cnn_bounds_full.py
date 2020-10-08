@@ -84,10 +84,10 @@ class Model:
         while i < len(model.layers):
             layer = model.layers[i]
             i += 1
-            print(cur_shape)
+            # print(cur_shape)
             weights = layer.get_weights()
             if type(layer) == Conv2D:
-                print("conv")
+                # print("conv")
                 if len(weights) == 1:
                     W = weights[0].astype(np.float32)
                     b = np.zeros(W.shape[-1], dtype=np.float32)
@@ -128,7 +128,7 @@ class Model:
                 self.weights.append(W)
                 self.biases.append(b)
             elif type(layer) == GlobalAveragePooling2D:
-                print("global avg pool")
+                # print("global avg pool")
                 b = np.zeros(cur_shape[-1], dtype=np.float32)
                 W = np.zeros(
                     (cur_shape[0], cur_shape[1], cur_shape[2], cur_shape[2]),
@@ -149,7 +149,7 @@ class Model:
                 self.weights.append(W)
                 self.biases.append(b)
             elif type(layer) == AveragePooling2D:
-                print("avg pool")
+                # print("avg pool")
                 b = np.zeros(cur_shape[-1], dtype=np.float32)
                 padding = layer.get_config()["padding"]
                 pool_size = layer.get_config()["pool_size"]
@@ -193,7 +193,7 @@ class Model:
                 self.weights.append(W)
                 self.biases.append(b)
             elif type(layer) == Activation or type(layer) == Lambda:
-                print("activation")
+                # print("activation")
                 self.types.append("relu")
                 self.sizes.append(None)
                 self.strides.append(None)
@@ -202,9 +202,9 @@ class Model:
                 self.weights.append(None)
                 self.biases.append(None)
             elif type(layer) == InputLayer:
-                print("input")
+                # print("input")
             elif type(layer) == BatchNormalization:
-                print("batch normalization")
+                # print("batch normalization")
                 gamma, beta, mean, std = weights
                 std = np.sqrt(std + 0.001)  # Avoids zero division
                 a = gamma / std
@@ -212,7 +212,7 @@ class Model:
                 self.weights[-1] = a * self.weights[-1]
                 self.biases[-1] = a * self.biases[-1] + b
             elif type(layer) == Dense:
-                print("FC")
+                # print("FC")
                 W, b = weights
                 b = b.astype(np.float32)
                 W = W.reshape(list(cur_shape) + [W.shape[-1]]).astype(np.float32)
@@ -227,9 +227,9 @@ class Model:
                 self.weights.append(W)
                 self.biases.append(b)
             elif type(layer) == Dropout:
-                print("dropout")
+                # print("dropout")
             elif type(layer) == MaxPooling2D:
-                print("pool")
+                # print("pool")
                 pool_size = layer.get_config()["pool_size"]
                 stride = layer.get_config()["strides"]
                 padding = layer.get_config()["padding"]
@@ -264,11 +264,11 @@ class Model:
                 self.weights.append(None)
                 self.biases.append(None)
             elif type(layer) == Flatten:
-                print("flatten")
+                # print("flatten")
             elif type(layer) == Reshape:
-                print("reshape")
+                # print("reshape")
             elif type(layer) == ResidualStart2:
-                print("basic block 2")
+                # print("basic block 2")
                 conv1 = model.layers[i]
                 bn1 = model.layers[i + 1]
                 conv2 = model.layers[i + 3]
@@ -380,7 +380,7 @@ class Model:
                 self.weights.append((W1, W2, W3))
                 self.biases.append((bias1, bias2, bias3))
             elif type(layer) == ResidualStart:
-                print("basic block")
+                # print("basic block")
                 conv1 = model.layers[i]
                 bn1 = model.layers[i + 1]
                 conv2 = model.layers[i + 3]
@@ -461,9 +461,9 @@ class Model:
                 self.weights.append((W1, W2))
                 self.biases.append((bias1, bias2))
             else:
-                print(str(type(layer)))
+                # print(str(type(layer)))
                 raise ValueError("Invalid Layer Type")
-        print(cur_shape)
+        # print(cur_shape)
 
     def predict(self, data):
         return self.model(data)
