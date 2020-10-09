@@ -166,10 +166,13 @@ class CNNModel:
                 self.weights.append(W)
                 self.biases.append(b)
             elif type(layer) == Activation:
+                pass
                 # print("activation")
             elif type(layer) == Lambda:
+                pass
                 # print("lambda")
             elif type(layer) == InputLayer:
+                pass
                 # print("input")
             elif type(layer) == BatchNormalization:
                 # print("batch normalization")
@@ -191,6 +194,7 @@ class CNNModel:
                 self.weights.append(W)
                 self.biases.append(b)
             elif type(layer) == Dropout:
+                pass
                 # print("dropout")
             elif type(layer) == MaxPooling2D:
                 # print("pool")
@@ -227,8 +231,10 @@ class CNNModel:
                 )
                 self.biases.append(np.full(1, np.nan, dtype=np.float32))
             elif type(layer) == Flatten:
+                pass
                 # print("flatten")
             elif type(layer) == Reshape:
+                pass
                 # print("reshape")
             else:
                 # print(str(type(layer)))
@@ -1103,3 +1109,4 @@ def run(
         )
     )
     return eps_avg, total_time
+

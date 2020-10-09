@@ -202,6 +202,7 @@ class Model:
                 self.weights.append(None)
                 self.biases.append(None)
             elif type(layer) == InputLayer:
+                pass
                 # print("input")
             elif type(layer) == BatchNormalization:
                 # print("batch normalization")
@@ -227,6 +228,7 @@ class Model:
                 self.weights.append(W)
                 self.biases.append(b)
             elif type(layer) == Dropout:
+                pass
                 # print("dropout")
             elif type(layer) == MaxPooling2D:
                 # print("pool")
@@ -264,8 +266,10 @@ class Model:
                 self.weights.append(None)
                 self.biases.append(None)
             elif type(layer) == Flatten:
+                pass
                 # print("flatten")
             elif type(layer) == Reshape:
+                pass
                 # print("reshape")
             elif type(layer) == ResidualStart2:
                 # print("basic block 2")
@@ -1509,4 +1513,5 @@ def run_gtsrb(model, input, label, eps, p_n, activation="relu"):
         p_n,
     )
     return LBs, UBs
+
 
