@@ -1,13 +1,9 @@
 import tensorflow as tf
-from gtsrb import get_cam_map
 import keras
 from keras.models import load_model
 from keras.activations import relu, softplus
 import numpy as np
-from skimage import color, exposure, transform
-from skimage import io
-import os
-import glob
+from gtsrb import get_cam_map
 from load_images import X, Y
 
 def get_maximum_indices(array, num_indices):
@@ -93,6 +89,8 @@ def get_attack(image, correct_class, k):
     else:
       lo = mid
   return hi
+
+## START THE EXPERIMENT
 
 NUM_CHANNELS = 16
 CAM_DIM = 24
