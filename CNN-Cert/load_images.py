@@ -57,3 +57,22 @@ for i in range(0, len(all_img_paths), 50): # len(all_img_paths)
 
 X = np.array(imgs, dtype='float32').transpose(0, 2, 3, 1) # n 48 48 3
 Y = np.eye(NUM_CLASSES, dtype='uint8')[labels]
+
+## load test data
+
+import pandas as pd
+test = pd.read_csv('../GTSRB/GT-final_test.csv', sep=';')
+
+# Load test dataset
+X_test = []
+Y_test = []
+i = 0
+for file_name, class_id in zip(list(test['Filename']), list(test['ClassId'])):
+    img_path = os.path.join('../GTSRB/Final_Test/Images/', file_name)
+    X_test.append(preprocess_img(io.imread(img_path)))
+    Y_test.append(class_id)
+
+X_test = np.array(X_test)
+Y_test = np.array(Y_test)
+
+X_test = X_test.transpose(0, 2, 3, 1)
