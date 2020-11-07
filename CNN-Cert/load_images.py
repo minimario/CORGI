@@ -33,7 +33,7 @@ def preprocess_img(img):
 def get_class(img_path):
     return int(img_path.split('/')[-2])
 
-root_dir = '/home/minimario/Research/gtsrb/GTSRB/Final_Training/Images'
+root_dir = '/content/gtsrb/GTSRB/Final_Training/Images'
 imgs = []
 labels = []
 
@@ -61,14 +61,14 @@ Y = np.eye(NUM_CLASSES, dtype='uint8')[labels]
 ## load test data
 
 import pandas as pd
-test = pd.read_csv('../GTSRB/GT-final_test.csv', sep=';')
+test = pd.read_csv('/content/GTSRB/GT-final_test.csv', sep=';')
 
 # Load test dataset
 X_test = []
 Y_test = []
 i = 0
 for file_name, class_id in zip(list(test['Filename']), list(test['ClassId'])):
-    img_path = os.path.join('../GTSRB/Final_Test/Images/', file_name)
+    img_path = os.path.join('/content/GTSRB/Final_Test/Images/', file_name)
     X_test.append(preprocess_img(io.imread(img_path)))
     Y_test.append(class_id)
 
