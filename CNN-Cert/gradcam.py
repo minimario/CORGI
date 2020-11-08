@@ -7,7 +7,7 @@ from cnn_bounds_full import Model, run_gtsrb
 from matplotlib import pyplot as plt
 
 # load the model, last activation of the model is a softmax so remove it
-model = load_model('model_dense.h5')
+model = load_model('../model_dense.h5')
 model.layers[-1].activation = None
 model.compile()
 
