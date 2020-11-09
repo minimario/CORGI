@@ -11,7 +11,32 @@ model = load_model('../model_dense.h5')
 model.layers[-1].activation = None
 model.compile()
 
-def get_gradient_bounds(x_l, x_u, w1, b1, w2):
+def get_last_conv_layer_output(model, x_0):
+  """
+  Gets actual value for the last convolutional layer
+  Output shape: (12, 12, 16)
+  """
+  conv_model = tf.keras.models.Model(
+      [model.inputs], [model.get_layer(index = -4).output]
+  )
+  conv_output = conv_model(x_0).numpy()
+  return conv_output.squeeze()
+
+def get_last_conv_layer_bounds(model, x_0, eps):
+  """
+  Gets lower and upper bounds for the last convolutional layer
+  Output shape: [(12, 12, 16), (12, 12, 16)]
+  """
+
+  # squeeze x_0 to get image for consistency
+  image = np.squeeze(x_0)
+
+  # compute last conv layer upper and lower bounds
+  cnn_model = Model(model, inp_shape=(48, 48, 3))
+  LBs, UBs = run_gtsrb(cnn_model, image, 0, eps, 105)
+  return LBs[-3], UBs[-3]
+
+def get_twolayer_fc_bounds(x_l, x_u, w1, b1, w2):
     """
     Gets gradient bounds for a 2-layer FC network
     with ReLU activation function.
@@ -59,43 +84,9 @@ def get_gradient_bounds(x_l, x_u, w1, b1, w2):
     grad_lo = np.sum(unsure_diag.dot(prod_neg) + pos_diag.dot(prod_matrix), axis = 0)
     grad_hi = np.sum(unsure_diag.dot(prod_pos) + pos_diag.dot(prod_matrix), axis = 0)
 
-    return grad_lo, grad_hi
-    
-def get_last_conv_layer_output(model, x_0):
-  """
-  Gets actual value for the last convolutional layer
-  Output shape: (12, 12, 16)
-  """
-  conv_model = tf.keras.models.Model(
-      [model.inputs], [model.get_layer(index = -4).output]
-  )
-  conv_output = conv_model(x_0).numpy()
-  return conv_output.squeeze()
+    return grad_lo, grad_hi    
 
-def get_last_conv_layer_bounds(model, x_0, eps):
-  """
-  Gets lower and upper bounds for the last convolutional layer
-  Output shape: [(12, 12, 16), (12, 12, 16)]
-  """
-
-  # squeeze x_0 to get image for consistency
-  image = np.squeeze(x_0)
-
-  # compute last conv layer upper and lower bounds
-  cnn_model = Model(model, inp_shape=(48, 48, 3))
-  LBs, UBs = run_gtsrb(cnn_model, image, 0, eps, 105)
-  return LBs[-3], UBs[-3]
-
-def last_conv_layer_tester():
-  # model, X needs to be defined
-  x_0 = X[0:1]
-  last_conv_lb, last_conv_ub = get_last_conv_layer_bounds(model, x_0, 0.001)
-  conv_output = get_last_conv_layer_output(model, x_0)
-  eps_error = 0.00001
-  assert(np.all(conv_output >= last_conv_lb - eps_error))
-  assert(np.all(conv_output <= last_conv_ub + eps_error))
-
-def get_fc_gradients(model, x_0, target_class):
+def get_fc_gradient(model, x_0, target_class):
   """
   Given a model, an input image x_0, and a target class,
   returns the exact gradient of the FC portion of
@@ -115,7 +106,7 @@ def get_fc_gradients(model, x_0, target_class):
   grads = tape.gradient(loss, conv_outputs)
   return grads.numpy().squeeze()
 
-def get_model_gradient_bounds(model, x_0, target_class, eps):
+def get_fc_gradient_bounds(model, x_0, target_class, eps):
   """
   Given a model, an input image x_0, and a target class,
   returns bounds on the gradient of the FC portion of
@@ -136,26 +127,15 @@ def get_model_gradient_bounds(model, x_0, target_class, eps):
   b2 = model.layers[-1].get_weights()[1][target_class]
 
   # get the fc gradient bounds using last conv layer bounds and weights
-  grad_lo, grad_hi = get_gradient_bounds(last_conv_lb, last_conv_ub, w1.T, b1, w2.T)
+  grad_lo, grad_hi = get_twolayer_fc_bounds(last_conv_lb, last_conv_ub, w1.T, b1, w2.T)
   return grad_lo.reshape(12, 12, 16), grad_hi.reshape(12, 12, 16)
-
-def test_fc_gradient_bounds():
-  # model, X, Y need to be defined
-  x = X[0:1]
-  y = Y[0:1]
-  target = np.argmax(y)
-  grads_real = get_fc_gradients(model, x, target)
-  grads_lb, grads_ub = get_model_gradient_bounds(model, x, target, 0.01)
-
-  assert(np.all(grads_lb - eps <= grads_real))
-  assert(np.all(grads_ub + eps >= grads_real))
 
 def get_gradcam(model, x_0, target_class):
   # get last conv output 
   last_conv_output = get_last_conv_layer_output(model, x_0)
 
   # compute weights for each conv map
-  fc_gradients = get_fc_gradients(model, x_0, target_class)
+  fc_gradients = get_fc_gradient(model, x_0, target_class)
   gradcam_weights = fc_gradients.mean(axis = (0, 1))
 
   # get gradcam and make sure it's positive
@@ -165,6 +145,53 @@ def get_gradcam(model, x_0, target_class):
 
   return gradcam
 
+def get_gradcam_bounds(model, x_0, target_class, eps):
+  last_conv_lb, last_conv_ub = get_last_conv_layer_bounds(model, x_0, eps)
+  fc_grad_lb, fc_grad_ub = get_fc_gradient_bounds(model, x_0, target_class, eps)
+  
+  assert(fc_grad_lb.shape == (12, 12, 16))
+  grad_weights_lb = fc_grad_lb.mean(axis = (0, 1))
+  grad_weights_ub = fc_grad_ub.mean(axis = (0, 1))
+
+  prod_1 = last_conv_lb.dot(np.diag(grad_weights_lb))
+  prod_2 = last_conv_lb.dot(np.diag(grad_weights_ub))
+  prod_3 = last_conv_ub.dot(np.diag(grad_weights_lb))
+  prod_4 = last_conv_ub.dot(np.diag(grad_weights_ub))
+  
+  mini = np.minimum(np.minimum(prod_1, prod_2), np.minimum(prod_3, prod_4))
+  maxi = np.maximum(np.maximum(prod_1, prod_2), np.maximum(prod_3, prod_4))
+
+  gradcam_lb = np.sum(mini, axis=2)
+  gradcam_ub = np.sum(maxi, axis=2)
+  return np.maximum(gradcam_lb, 0), np.maximum(gradcam_ub, 0)
+
+def test_last_conv_bounds():
+  # model, X needs to be defined
+  x_0 = X[0:1]
+  last_conv_lb, last_conv_ub = get_last_conv_layer_bounds(model, x_0, 0.001)
+  conv_output = get_last_conv_layer_output(model, x_0)
+  eps_error = 0.00001
+  assert(np.all(conv_output >= last_conv_lb - eps_error))
+  assert(np.all(conv_output <= last_conv_ub + eps_error))
+
+def test_fc_gradient_bounds():
+  # model, X, Y need to be defined
+  x = X[0:1]
+  y = Y[0:1]
+  target = np.argmax(y)
+  grads_real = get_fc_gradient(model, x, target)
+  grads_lb, grads_ub = get_fc_gradient_bounds(model, x, target, 0.01)
+  eps = 0.00001
+  assert(np.all(grads_lb - eps <= grads_real))
+  assert(np.all(grads_ub + eps >= grads_real))
+  
+def test_gradcam_bounds():
+  gradcam = get_gradcam(model, X[0:1], np.argmax(Y[0]))
+  gradcam_lb, gradcam_ub = get_gradcam_bounds(model, X[0:1], np.argmax(Y[0]), 0.00001)
+  eps_error = 0.0001
+  assert(np.alltrue(gradcam_lb - eps_error <= gradcam))
+  assert(np.alltrue(gradcam <= gradcam_ub + eps_error))
+
 # dummy function for testing purposes
 def f(x, model):
   w1 = model.layers[-2].get_weights()[0].T
@@ -173,10 +200,11 @@ def f(x, model):
   b2 = model.layers[-1].get_weights()[1]
   return w2.dot(np.maximum(0, w1.dot(x) + b1)) + b2
 
-# another testing function
+# test all the functions
 def test():
   test_fc_gradient_bounds()
-  last_conv_layer_tester()
+  test_last_conv_bounds()
+  test_gradcam_bounds()
 
 # image_index = 250
 # gradcam = get_gradcam(model, X[image_index:image_index+1], np.argmax(Y[image_index]))
