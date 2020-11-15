@@ -5,6 +5,7 @@ import tensorflow as tf
 from keras.models import load_model
 from cnn_bounds_full import Model, run_gtsrb
 from matplotlib import pyplot as plt
+from get_corgi_bounds import check_top_k
 
 # load the model, last activation of the model is a softmax so remove it
 model = load_model('../model_dense.h5')
@@ -164,6 +165,25 @@ def get_gradcam_bounds(model, x_0, target_class, eps):
   gradcam_lb = np.sum(mini, axis=2)
   gradcam_ub = np.sum(maxi, axis=2)
   return np.maximum(gradcam_lb, 0), np.maximum(gradcam_ub, 0)
+
+def get_interpretability_bound_gradcam(model, x_0, correct_class, num_indices):
+    pred_class = np.argmax(model.predict(x_0))
+    assert(pred_class == correct_class)
+
+    gradcam_map = get_gradcam(model, x_0, correct_class)
+
+    eps_min = 0
+    eps_max = 0.01
+    num_iterations = 12
+    for it in range(num_iterations):
+        print("Iteration {}, LB: {}, UB: {}".format(it, eps_min, eps_max))
+        eps_mid = (eps_min + eps_max) / 2
+        gradcam_LB, gradcam_UB = get_gradcam_bounds(model, image, correct_class, eps_mid)
+        if check_top_k(gradcam_map, gradcam_LB, gradcam_UB, num_indices):
+            eps_min = eps_mid
+        else:
+            eps_max = eps_mid
+    return eps_min
 
 def test_last_conv_bounds():
   # model, X needs to be defined
