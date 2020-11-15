@@ -140,7 +140,6 @@ def get_gradcam(model, x_0, target_class):
   gradcam_weights = fc_gradients.mean(axis = (0, 1))
 
   # get gradcam and make sure it's positive
-  output = f(last_conv_output.flatten(), model)
   gradcam = last_conv_output.dot(gradcam_weights)
   gradcam = np.maximum(gradcam, 0)
 
@@ -170,6 +169,7 @@ def get_interpretability_bound_gradcam(model, x_0, correct_class, num_indices):
     pred_class = np.argmax(model.predict(x_0))
     assert(pred_class == correct_class)
 
+    image = x_0.squeeze()
     gradcam_map = get_gradcam(model, x_0, correct_class)
 
     eps_min = 0

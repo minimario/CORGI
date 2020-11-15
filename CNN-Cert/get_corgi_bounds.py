@@ -104,15 +104,6 @@ def get_interpretability_bound(model, image, correct_class, num_indices):
     print(eps_min, eps_max)
     return eps_min
 
-# BEGIN THE EXPERIMENT
-i = 496
-model = load_model("../model_small_92.h5")
-top_k = 20
-image = X[i]
-correct_class = np.argmax(Y[i])
-bound = get_interpretability_bound(model, image, correct_class, top_k)
-print(bound)
-
 def check_top_k_close(cam_map, cam_LB, cam_UB, k1, k2):
     (topk_r, topk_c), (not_topk_r, not_topk_c) = get_all_indices_split(cam_map, k1)
     not_top_k_values = cam_UB[not_topk_r, not_topk_c]
@@ -141,3 +132,15 @@ def get_interpretability_bound_rank(model, image, correct_class, k1, k2):
             eps_max = eps_mid
 
     return eps_min
+
+def run_experiment():
+    # BEGIN THE EXPERIMENT
+    i = 496
+    model = load_model("../model_small_92.h5")
+    top_k = 20
+    image = X[i]
+    correct_class = np.argmax(Y[i])
+    bound = get_interpretability_bound(model, image, correct_class, top_k)
+    print(bound)
+
+# run_experiment()
