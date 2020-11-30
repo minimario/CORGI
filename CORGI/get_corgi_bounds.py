@@ -2,7 +2,6 @@ from matplotlib import pyplot as plt
 import keras
 import numpy as np
 from keras.models import load_model
-from load_images import X, Y
 from cnn_bounds_full import Model, run_gtsrb
 
 NUM_CHANNELS = 16
@@ -91,8 +90,8 @@ def get_interpretability_bound(model, image, correct_class, num_indices):
     cam_map = get_cam_map(model, image, correct_class)
 
     eps_min = 0
-    eps_max = 0.01
-    num_iterations = 12
+    eps_max = 0.005
+    num_iterations = 15
     for it in range(num_iterations):
         print("Iteration {}, LB: {}, UB: {}".format(it, eps_min, eps_max))
         eps_mid = (eps_min + eps_max) / 2
@@ -138,8 +137,9 @@ def run_experiment():
     i = 496
     model = load_model("../model_gtsrb.h5")
     top_k = 20
-    image = X[i]
-    correct_class = np.argmax(Y[i])
+    from load_test import X_test, Y_test
+    image = X_test[i]
+    correct_class = np.argmax(Y_test[i])
     bound = get_interpretability_bound(model, image, correct_class, top_k)
     print(bound)
 

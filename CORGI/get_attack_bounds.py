@@ -3,8 +3,21 @@ import keras
 from keras.models import load_model
 from keras.activations import relu, softplus
 import numpy as np
-from gtsrb import get_cam_map
-from load_images import X, Y
+from get_corgi_bounds import get_cam_map
+
+model = load_model('../model_gtsrb.h5')
+last_conv_layer_output_model_relu = keras.Model(model.input, model.get_layer(index = -3).output) 
+fc_weights = np.asarray(model.weights[-2].numpy())
+
+model_sp = load_model('../model_gtsrb.h5')
+last_conv_layer_output_model_softplus = keras.Model(model_sp.input, model_sp.get_layer(index = -3).output) 
+for layer in model_sp.layers:
+  if hasattr(layer, 'activation') and layer.activation == relu:
+    layer.activation = softplus
+model_sp.compile()
+
+NUM_CHANNELS = 16
+CAM_DIM = 24
 
 def get_maximum_indices(array, num_indices):
     """
@@ -29,25 +42,25 @@ def get_top_k_overlap(array_1, array_2, k):
   r_max_2, c_max_2 = get_maximum_indices(array_2, k)
   return len(np.intersect1d(n*r_max_1+c_max_1, n*r_max_2+c_max_2))
 
-def helper_orig(x_0, correct_class, r_max, c_max):
+def helper_orig(x_0, correct_class, r_max, c_max, k):
   # CAM map calculation with TF tracking
   cam_map = tf.zeros([CAM_DIM, CAM_DIM], dtype=tf.dtypes.float32)
   last_conv_layer_output = last_conv_layer_output_model_relu(x_0)
   for channel in range(NUM_CHANNELS):
     cam_map += last_conv_layer_output[0, :, :, channel] * fc_weights[channel, correct_class]
   dissimilarity = 0
-  for i in range(top_k):
+  for i in range(k):
     dissimilarity -= cam_map[r_max[i]][c_max[i]]
   return cam_map, dissimilarity
 
-def helper_softplus(x_0, correct_class, r_max, c_max):
+def helper_softplus(x_0, correct_class, r_max, c_max, k):
   # CAM map calculation with TF tracking
   cam_map = tf.zeros([CAM_DIM, CAM_DIM], dtype=tf.dtypes.float32)
   last_conv_layer_output = last_conv_layer_output_model_softplus(x_0)
   for channel in range(NUM_CHANNELS):
     cam_map += last_conv_layer_output[0, :, :, channel] * fc_weights[channel, correct_class]
   dissimilarity = 0
-  for i in range(top_k):
+  for i in range(k):
     dissimilarity -= cam_map[r_max[i]][c_max[i]]
   return cam_map, dissimilarity
 
@@ -62,13 +75,13 @@ def interpretability_attack(x_0, correct_class, k, epsilon):
   for cycle in range(NUM_STEPS):
     with tf.GradientTape(persistent=True) as tape:
       # get the cam_map and dissimilarity score for the new image
-      cam_map, dissimilarity = helper_orig(x, correct_class, r_max, c_max)
+      cam_map, dissimilarity = helper_orig(x, correct_class, r_max, c_max, k)
       # cam_map_softplus, dissimilarity_softplus = helper_softplus(x, correct_class, r_max, c_max)
 
     # check if it's a successful attack
     if np.argmax(model(x)) == correct_class:
-      num_overlap = get_top_k_overlap(cam_map_orig, cam_map.numpy(), top_k)
-      if num_overlap != top_k:
+      num_overlap = get_top_k_overlap(cam_map_orig, cam_map.numpy(), k)
+      if num_overlap != k:
         print("attacked on", cycle)
         return True
 
@@ -81,8 +94,8 @@ def interpretability_attack(x_0, correct_class, k, epsilon):
   
 def get_attack(image, correct_class, k):
   lo = 0
-  hi = 0.02
-  for steps in range(10):
+  hi = 0.05
+  for steps in range(15):
     mid = (lo + hi) / 2
     if interpretability_attack(image, correct_class, k, mid):
       hi = mid
@@ -90,31 +103,33 @@ def get_attack(image, correct_class, k):
       lo = mid
   return hi
 
-## START THE EXPERIMENT
+def run_experiment():
+  ## START THE EXPERIMENT
+  from load_images import X, Y
 
-NUM_CHANNELS = 16
-CAM_DIM = 24
+  NUM_CHANNELS = 16
+  CAM_DIM = 24
 
-model = load_model('../model_gtsrb.h5')
-model_sp = load_model('../model_gtsrb.h5')
-for layer in model_sp.layers:
-  if hasattr(layer, 'activation') and layer.activation == relu:
-    layer.activation = softplus
-model_sp.compile()
+  model = load_model('../model_gtsrb.h5')
+  model_sp = load_model('../model_gtsrb.h5')
+  for layer in model_sp.layers:
+    if hasattr(layer, 'activation') and layer.activation == relu:
+      layer.activation = softplus
+  model_sp.compile()
 
-last_conv_layer_output_model_softplus = keras.Model(model_sp.input, model_sp.get_layer(index = -3).output) 
-last_conv_layer_output_model_relu = keras.Model(model.input, model.get_layer(index = -3).output) 
+  last_conv_layer_output_model_softplus = keras.Model(model_sp.input, model_sp.get_layer(index = -3).output) 
+  last_conv_layer_output_model_relu = keras.Model(model.input, model.get_layer(index = -3).output) 
 
-fc_weights = np.asarray(model.weights[-2].numpy())
+  fc_weights = np.asarray(model.weights[-2].numpy())
 
-bounds = {}
-top_k = 15
-for i in range(120):
-  x_0 = X[i:i+1]
-  correct_class = np.argmax(Y[i])
-  if np.argmax(model.predict(X[i:i+1])) != np.argmax(Y[i]):
-    print("wrong")
-    continue
-  new_bound = get_attack(x_0, correct_class, top_k)
-  bounds[i] = new_bound
-  print(bounds)
+  bounds = {}
+  top_k = 15
+  for i in range(120):
+    x_0 = X[i:i+1]
+    correct_class = np.argmax(Y[i])
+    if np.argmax(model.predict(X[i:i+1])) != np.argmax(Y[i]):
+      print("wrong")
+      continue
+    new_bound = get_attack(x_0, correct_class, top_k)
+    bounds[i] = new_bound
+    print(bounds)
