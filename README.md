@@ -6,8 +6,10 @@ Interpreting machine learning models is challenging but crucial for ensuring the
 
 # Results
 This image shows a sample image being attacked with 3 different radii. Note that under the CORGI certifiable guarantee, the interpretation is the same.
+
 <a href="https://ibb.co/vPGNXgz"><img src="https://i.ibb.co/bBZ4bqd/attackbig.png" alt="attackbig" border="0"></a>
 
 This image shows a comparison between CORGI lower bounds and attack bounds. For our network, CORGI bounds are only 4-5x away from optimal attack bounds.
+
 <a href="https://ibb.co/rFVybSB"><img src="https://i.ibb.co/7jqyg53/corgi.png" alt="corgi" border="0"></a>
 
