@@ -23,10 +23,10 @@ for i in range(Y_test.shape[0]):
   indices[Y_test[i]].append(i)
 
 out = [[] for _ in range(10)]
-for c in range(9, -1, -1):
+for c in range(4, 10):
   ct = 0
   for i in indices[c]:
-    out = pickle.load(open('data_final_2.pkl', 'rb'))
+    out = pickle.load(open('data_final_4.pkl', 'rb'))
     if i <= lut[-1][0]:
       corgi, attack = d[i]
     else:
@@ -39,4 +39,4 @@ for c in range(9, -1, -1):
     ct+=1
     print(out)
     out[c].append((i, corgi, attack))
-    pickle.dump(out, open('data_final_2.pkl', 'wb'))
+    pickle.dump(out, open('data_final_4.pkl', 'wb'))

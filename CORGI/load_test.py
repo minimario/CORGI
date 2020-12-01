@@ -1,4 +1,3 @@
-
 import numpy as np
 from skimage import color, exposure, transform
 from skimage import io

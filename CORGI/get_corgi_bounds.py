@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
-import keras
+from tensorflow import keras
 import numpy as np
-from keras.models import load_model
+from tensorflow.keras.models import load_model
 from cnn_bounds_full import Model, run_gtsrb
 
 NUM_CHANNELS = 16
@@ -90,8 +90,8 @@ def get_interpretability_bound(model, image, correct_class, num_indices):
     cam_map = get_cam_map(model, image, correct_class)
 
     eps_min = 0
-    eps_max = 0.005
-    num_iterations = 15
+    eps_max = 0.003
+    num_iterations = 10
     for it in range(num_iterations):
         print("Iteration {}, LB: {}, UB: {}".format(it, eps_min, eps_max))
         eps_mid = (eps_min + eps_max) / 2

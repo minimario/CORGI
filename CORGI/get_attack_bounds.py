@@ -1,7 +1,7 @@
 import tensorflow as tf
-import keras
-from keras.models import load_model
-from keras.activations import relu, softplus
+from tensorflow import keras
+from tensorflow.keras.models import load_model
+from tensorflow.keras.activations import relu, softplus
 import numpy as np
 from get_corgi_bounds import get_cam_map
 
@@ -95,7 +95,7 @@ def interpretability_attack(x_0, correct_class, k, epsilon):
 def get_attack(image, correct_class, k):
   lo = 0
   hi = 0.05
-  for steps in range(15):
+  for steps in range(12):
     mid = (lo + hi) / 2
     if interpretability_attack(image, correct_class, k, mid):
       hi = mid
